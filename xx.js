@@ -1,5 +1,5 @@
 const PENDING = "pending";
-const FULLFILLED = "pending";
+const FULLFILLED = "fulfilled";
 const REJECTED = "rejected";
 
 function resolvePromise(promise2, x, resolve, reject) {
@@ -41,20 +41,20 @@ class Promise {
     this.state = PENDING;
     this.value = undefined;
     this.reason = undefined;
-    this.fullfilledCB = [];
-    this.rejectedCB = [];
+    this.onResolvedCallbacks = [];
+    this.onRejectedCallbacks = [];
     let resolve = (val) => {
       if (this.state === PENDING) {
         this.value = val;
         this.state = FULLFILLED;
-        this.fullfilledCB.forEach((v) => v());
+        this.onResolvedCallbacks.forEach((v) => v());
       }
     };
     let reject = (e) => {
       if (this.state === PENDING) {
         this.state = REJECTED;
         this.reason = e;
-        this.rejectedCB.forEach((v) => v());
+        this.onRejectedCallbacks.forEach((v) => v());
       }
     };
     try {
@@ -63,11 +63,12 @@ class Promise {
       reject(error);
     }
   }
-  then(fullfilled, rejected) {
-    fullfilled = typeof fullfilled === "function" ? fullfilled : (val) => val;
-    rejected =
-      typeof fullfilled === "function"
-        ? rejected
+  then(onFullfilled, onRejected) {
+    onFullfilled =
+      typeof onFullfilled === "function" ? onFullfilled : (val) => val;
+    onRejected =
+      typeof onRejected === "function"
+        ? onRejected
         : (error) => {
             throw error;
           };
@@ -75,7 +76,7 @@ class Promise {
       if (this.state === FULLFILLED) {
         setTimeout(() => {
           try {
-            let x = fullfilled(this.value);
+            let x = onFullfilled(this.value);
             resolvePromise(promise2, x, resolve, reject);
           } catch (error) {
             reject(error);
@@ -85,7 +86,7 @@ class Promise {
       if (this.state === REJECTED) {
         setTimeout(() => {
           try {
-            let x = rejected(this.reason);
+            let x = onRejected(this.reason);
             resolvePromise(promise2, x, resolve, reject);
           } catch (error) {
             reject(error);
@@ -93,20 +94,20 @@ class Promise {
         }, 0);
       }
       if (this.state === PENDING) {
-        this.fullfilledCB.push(() => {
+        this.onResolvedCallbacks.push(() => {
           setTimeout(() => {
             try {
-              let x = fullfilled(this.value);
+              let x = onFullfilled(this.value);
               resolvePromise(promise2, x, resolve, reject);
             } catch (error) {
               reject(error);
             }
           }, 0);
         });
-        this.rejectedCB.push(() => {
+        this.onRejectedCallbacks.push(() => {
           setTimeout(() => {
             try {
-              let x = rejected(this.reason);
+              let x = onRejected(this.reason);
               resolvePromise(promise2, x, resolve, reject);
             } catch (error) {
               reject(error);
