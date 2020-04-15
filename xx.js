@@ -38,6 +38,11 @@ function resolvePromise(promise2, x, resolve, reject) {
 }
 class Promise {
   constructor(excutor) {
+    this.state = PENDING;
+    this.value = undefined;
+    this.reason = undefined;
+    this.fullfilledCB = [];
+    this.rejectedCB = [];
     let resolve = (val) => {
       if (this.state === PENDING) {
         this.value = val;
@@ -52,11 +57,6 @@ class Promise {
         this.rejectedCB.forEach((v) => v());
       }
     };
-    this.state = PENDING;
-    this.value = undefined;
-    this.reason = undefined;
-    this.fullfilledCB = [];
-    this.rejectedCB = [];
     try {
       excutor(resolve, reject);
     } catch (error) {
@@ -85,7 +85,7 @@ class Promise {
       if (this.state === REJECTED) {
         setTimeout(() => {
           try {
-            let x = reject(this.reason);
+            let x = rejected(this.reason);
             resolvePromise(promise2, x, resolve, reject);
           } catch (error) {
             reject(error);
@@ -106,7 +106,7 @@ class Promise {
         this.rejectedCB.push(() => {
           setTimeout(() => {
             try {
-              let x = reject(this.reason);
+              let x = rejected(this.reason);
               resolvePromise(promise2, x, resolve, reject);
             } catch (error) {
               reject(error);
